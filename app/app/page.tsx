@@ -13,6 +13,7 @@ interface Transacao {
 interface Usuario {
   email: string;
   nome: string;
+  senha?: string;
 }
 
 export default function Home() {
@@ -22,6 +23,7 @@ export default function Home() {
   // Estados de inputs de Login / Cadastro
   const [emailInput, setEmailInput] = useState('');
   const [nomeInput, setNomeInput] = useState('');
+  const [senhaInput, setSenhaInput] = useState('');
   const [erro, setErro] = useState('');
 
   // Estados do Dashboard Financeiro
@@ -57,8 +59,8 @@ export default function Home() {
 
   const lidarComCadastro = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!emailInput || !nomeInput) {
-      setErro('Preencha todos os campos.');
+    if (!emailInput || !nomeInput || !senhaInput) {
+      setErro('Preencha todos os campos, incluindo a senha.');
       return;
     }
 
@@ -70,7 +72,7 @@ export default function Home() {
       return;
     }
 
-    const novoUsuario: Usuario = { email: emailInput, nome: nomeInput };
+    const novoUsuario: Usuario = { email: emailInput, nome: nomeInput, senha: senhaInput };
     usuariosCadastrados.push(novoUsuario);
     localStorage.setItem('gestor_rita_usuarios', JSON.stringify(usuariosCadastrados));
     localStorage.setItem('gestor_rita_usuario_atual', JSON.stringify(novoUsuario));
@@ -80,13 +82,14 @@ export default function Home() {
     setErro('');
     setEmailInput('');
     setNomeInput('');
+    setSenhaInput('');
     setTela('dashboard');
   };
 
   const lidarComLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!emailInput) {
-      setErro('Digite o seu e-mail.');
+    if (!emailInput || !senhaInput) {
+      setErro('Digite o seu e-mail e a sua senha.');
       return;
     }
 
@@ -94,21 +97,22 @@ export default function Home() {
     const usuarioEncontrado = usuariosCadastrados.find((u: Usuario) => u.email === emailInput);
 
     if (!usuarioEncontrado) {
-      const novoUsuario: Usuario = { email: emailInput, nome: emailInput.split('@')[0] };
-      usuariosCadastrados.push(novoUsuario);
-      localStorage.setItem('gestor_rita_usuarios', JSON.stringify(usuariosCadastrados));
-      localStorage.setItem('gestor_rita_usuario_atual', JSON.stringify(novoUsuario));
-      setUsuarioLogado(novoUsuario);
-      carregarTransacoes(emailInput);
-    } else {
-      localStorage.setItem('gestor_rita_usuario_atual', JSON.stringify(usuarioEncontrado));
-      setUsuarioLogado(usuarioEncontrado);
-      carregarTransacoes(usuarioEncontrado.email);
+      setErro('E-mail não cadastrado. Crie uma conta primeiro.');
+      return;
     }
+
+    if (usuarioEncontrado.senha && usuarioEncontrado.senha !== senhaInput) {
+      setErro('Senha incorreta. Tente novamente.');
+      return;
+    }
+
+    localStorage.setItem('gestor_rita_usuario_atual', JSON.stringify(usuarioEncontrado));
+    setUsuarioLogado(usuarioEncontrado);
+    carregarTransacoes(usuarioEncontrado.email);
 
     setErro('');
     setEmailInput('');
-    setNomeInput('');
+    setSenhaInput('');
     setTela('dashboard');
   };
 
@@ -180,6 +184,16 @@ export default function Home() {
                   className="w-full border border-gray-300 rounded-xl p-3 text-sm text-gray-900 bg-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-600"
                 />
               </div>
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 uppercase mb-1">Senha</label>
+                <input
+                  type="password"
+                  placeholder="Sua senha"
+                  value={senhaInput}
+                  onChange={(e) => setSenhaInput(e.target.value)}
+                  className="w-full border border-gray-300 rounded-xl p-3 text-sm text-gray-900 bg-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-600"
+                />
+              </div>
               <button
                 type="submit"
                 className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl p-3 text-sm transition-colors shadow-md"
@@ -189,7 +203,7 @@ export default function Home() {
               <div className="text-center pt-2">
                 <button
                   type="button"
-                  onClick={() => { setTela('cadastro'); setErro(''); }}
+                  onClick={() => { setTela('cadastro'); setErro(''); setEmailInput(''); setSenhaInput(''); }}
                   className="text-xs text-blue-600 hover:underline font-semibold"
                 >
                   Não tem uma conta? Criar novo usuário
@@ -218,6 +232,16 @@ export default function Home() {
                   className="w-full border border-gray-300 rounded-xl p-3 text-sm text-gray-900 bg-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-600"
                 />
               </div>
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 uppercase mb-1">Senha</label>
+                <input
+                  type="password"
+                  placeholder="Crie uma senha"
+                  value={senhaInput}
+                  onChange={(e) => setSenhaInput(e.target.value)}
+                  className="w-full border border-gray-300 rounded-xl p-3 text-sm text-gray-900 bg-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-600"
+                />
+              </div>
               <button
                 type="submit"
                 className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold rounded-xl p-3 text-sm transition-colors shadow-md"
@@ -227,7 +251,7 @@ export default function Home() {
               <div className="text-center pt-2">
                 <button
                   type="button"
-                  onClick={() => { setTela('login'); setErro(''); }}
+                  onClick={() => { setTela('login'); setErro(''); setEmailInput(''); setSenhaInput(''); }}
                   className="text-xs text-gray-700 hover:underline font-semibold"
                 >
                   Já possui uma conta? Voltar para o Login
@@ -269,7 +293,7 @@ export default function Home() {
               R$ {saldoAtual.toFixed(2)}
             </p>
           </div>
-          <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+            <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
             <h2 className="text-xs font-semibold uppercase tracking-wider text-gray-400">Receitas do Mês</h2>
             <p className="text-2xl font-extrabold text-blue-600 mt-2">R$ {totalReceitas.toFixed(2)}</p>
           </div>
@@ -338,7 +362,5 @@ export default function Home() {
     </main>
   );
 }
-
-
 
 
